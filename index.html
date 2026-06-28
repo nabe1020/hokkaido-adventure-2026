@@ -6,3 +6,984 @@
 <title>北海道冒険旅行 2026 🐻</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --sky:#1a6fa8; --forest:#2d7a3a; --orange:#e8721c; --yellow:#f5c842;
+  --dark:#1a1a2e; --text:#2c2c2c; --muted:#777; --bg:#f7f5ef;
+  --white:#fff; --radius:14px; --shadow:0 3px 16px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0d3b6e 0%,#1a6fa8 55%,#2d9c5e 100%);color:#fff;padding:44px 20px 36px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,rgba(255,255,255,0.07) 0%,transparent 60%);pointer-events:none;}
+.hero-icon{font-size:64px;display:block;margin-bottom:12px;}
+.hero h1{font-size:28px;font-weight:900;letter-spacing:1px;margin-bottom:6px;text-shadow:0 2px 8px rgba(0,0,0,0.25);}
+.hero-sub{font-size:14px;opacity:.85;margin-bottom:20px;}
+.hero-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.hbadge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:700;}
+
+/* NAV */
+.nav{background:var(--dark);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:200;}
+.nav::-webkit-scrollbar{display:none;}
+.nbtn{color:rgba(255,255,255,.55);border:none;background:none;padding:13px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:.2s;}
+.nbtn:hover,.nbtn.active{color:var(--yellow);border-bottom-color:var(--yellow);}
+
+/* PAGES */
+.page{display:none;max-width:820px;margin:0 auto;padding:28px 16px 60px;}
+.page.active{display:block;}
+
+/* SECTION TITLE */
+.stitle{font-size:20px;font-weight:900;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+
+/* ROUTE MAP */
+#main-map{width:100%;height:380px;border-radius:var(--radius);box-shadow:var(--shadow);}
+
+/* TIMELINE */
+.timeline{position:relative;}
+.timeline::before{content:'';position:absolute;left:26px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--sky),#9b59b6,var(--forest),var(--orange));border-radius:3px;}
+.tlcard{display:flex;gap:14px;margin-bottom:16px;cursor:pointer;}
+.tldot{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:1;border:3px solid #fff;}
+.tlbody{flex:1;background:var(--white);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);transition:transform .15s;}
+.tlbody:hover{transform:translateY(-2px);}
+.tldate{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:2px;}
+.tltitle{font-size:16px;font-weight:900;margin-bottom:3px;}
+.tlsub{font-size:12px;color:var(--muted);}
+.tlfoot{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.tltag{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700;}
+.tag-stay{background:#e8f4fd;color:#1a6fa8;}
+.tag-warn{background:#fff8e0;color:#b8860b;}
+.go-btn{margin-left:auto;background:var(--orange);color:#fff;border:none;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;}
+
+/* DAY DETAIL PAGE */
+.day-hero{border-radius:var(--radius);padding:24px 20px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;}
+.day-hero::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.18);border-radius:var(--radius);}
+.day-hero-inner{position:relative;}
+.day-hero-icon{font-size:48px;display:block;margin-bottom:8px;}
+.day-hero h2{font-size:22px;font-weight:900;margin-bottom:4px;}
+.day-hero-sub{font-size:13px;opacity:.9;}
+.back-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;display:inline-block;}
+
+/* DAY MAP */
+.day-map-wrap{width:100%;height:260px;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden;}
+
+/* SPOT CARDS */
+.spots-title{font-size:15px;font-weight:900;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.spot-grid{display:grid;gap:10px;margin-bottom:24px;}
+.spot-card{background:var(--white);border-radius:12px;padding:14px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:flex-start;}
+.spot-emoji-wrap{font-size:32px;flex-shrink:0;width:44px;text-align:center;}
+.spot-info{flex:1;}
+.spot-name{font-size:14px;font-weight:900;margin-bottom:2px;}
+.spot-desc{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.spot-meta{display:flex;gap:6px;flex-wrap:wrap;}
+.smeta{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;}
+.smeta-time{background:#f0f0f0;color:#555;}
+.smeta-cost{background:#e8f5ea;color:#2d7a3a;}
+.smeta-must{background:#fdeaea;color:#c0392b;}
+.smeta-tip{background:#fff8e0;color:#b8860b;}
+
+/* FOOD SECTION IN DAY */
+.food-list-day{display:grid;gap:8px;margin-bottom:24px;}
+.food-item-day{background:var(--white);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center;}
+.fday-emoji{font-size:24px;flex-shrink:0;}
+.fday-name{font-size:13px;font-weight:800;}
+.fday-shop{font-size:12px;color:var(--sky);font-weight:600;}
+.fday-note{font-size:11px;color:var(--muted);}
+.fday-check{font-size:22px;cursor:pointer;flex-shrink:0;margin-left:auto;}
+
+/* STAY CARD */
+.stay-card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:center;margin-bottom:24px;}
+.stay-icon{font-size:36px;flex-shrink:0;}
+.stay-info .stay-name{font-size:15px;font-weight:900;margin-bottom:3px;}
+.stay-info .stay-meta{font-size:12px;color:var(--muted);}
+.stay-status{margin-left:auto;font-size:13px;font-weight:800;padding:5px 14px;border-radius:999px;}
+.stay-ok{background:#e8f5ea;color:#2d7a3a;}
+.stay-warn{background:#fff8e0;color:#b8860b;}
+
+/* CHECKLIST / PACKING */
+.clist-section{background:var(--white);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px;}
+.clist-title{font-size:14px;font-weight:900;margin-bottom:10px;}
+.citem{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;}
+.citem:last-child{border-bottom:none;}
+.citem.done{opacity:.45;}
+.citem.done .clabel{text-decoration:line-through;}
+.cbox{width:22px;height:22px;border:2px solid #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;transition:.15s;}
+.citem.done .cbox{background:var(--forest);border-color:var(--forest);color:#fff;}
+.clabel{font-size:13px;flex:1;}
+.cnote{font-size:11px;color:var(--muted);}
+.prog-wrap{background:#e8e4d8;border-radius:999px;height:7px;margin-bottom:18px;overflow:hidden;}
+.prog-bar{height:7px;border-radius:999px;transition:width .4s;}
+.prog-label{font-size:12px;color:var(--muted);margin-bottom:5px;}
+
+/* PACKING GRID */
+.pack-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pack-cat{background:var(--white);border-radius:12px;padding:12px;box-shadow:var(--shadow);}
+.pack-cat-title{font-size:12px;font-weight:900;margin-bottom:8px;}
+
+/* FOOD GLOBAL LIST */
+.food-card{background:var(--white);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+.food-emoji{font-size:36px;flex-shrink:0;}
+.food-title{font-size:15px;font-weight:900;margin-bottom:2px;}
+.food-shop{font-size:12px;color:var(--sky);font-weight:700;margin-bottom:3px;}
+.food-note{font-size:11px;color:var(--muted);}
+.food-check{font-size:26px;cursor:pointer;flex-shrink:0;margin-left:auto;align-self:center;}
+
+/* BOOKING */
+.bitem{background:var(--white);border-radius:12px;padding:13px 16px;box-shadow:var(--shadow);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.bname{font-size:14px;font-weight:800;}
+.bnote{font-size:11px;color:var(--muted);margin-top:2px;}
+.bstatus{font-size:11px;font-weight:800;padding:4px 12px;border-radius:999px;white-space:nowrap;}
+.bok{background:#e8f5ea;color:#2d7a3a;}
+.bwarn{background:#fff8e0;color:#b8860b;}
+
+/* MISSIONS */
+.mission{background:var(--white);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s;}
+.mission:hover{transform:scale(1.01);}
+.mission.done{opacity:.5;}
+.micon{font-size:34px;flex-shrink:0;}
+.mtitle{font-size:14px;font-weight:900;}
+.mdesc{font-size:11px;color:var(--muted);margin-top:2px;}
+.mcheck{margin-left:auto;width:28px;height:28px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:.15s;}
+.mission.done .mcheck{background:var(--forest);border-color:var(--forest);color:#fff;}
+
+/* SAVE BTN */
+.save-btn{background:var(--orange);color:#fff;border:none;border-radius:999px;padding:10px 28px;font-size:14px;font-weight:800;cursor:pointer;display:block;margin:16px auto;transition:.15s;}
+.save-btn:hover{transform:scale(1.03);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d7a3a;color:#fff;padding:10px 24px;border-radius:999px;font-size:13px;font-weight:800;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);pointer-events:none;}
+
+.footer{background:var(--dark);color:rgba(255,255,255,.4);text-align:center;padding:20px;font-size:11px;}
+
+@media(max-width:500px){
+  .hero h1{font-size:22px;}
+  .pack-grid{grid-template-columns:1fr;}
+  .day-hero h2{font-size:18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="hero-icon">🐻‍❄️</span>
+  <h1>北海道 冒険旅行 2026</h1>
+  <p class="hero-sub">父ちゃんと息子の最高の夏 🏕️ 2026.8.2 → 8.13</p>
+  <div class="hero-badges">
+    <span class="hbadge">🚐 キャンピングカー旅</span>
+    <span class="hbadge">🗓 11泊12日</span>
+    <span class="hbadge">👨‍👦 親子2人</span>
+    <span class="hbadge">📍 1,200km+</span>
+  </div>
+</div>
+
+<nav class="nav" id="main-nav">
+  <button class="nbtn active" onclick="showPage('home',this)">🗺 ホーム</button>
+  <button class="nbtn" onclick="showPage('schedule',this)">📅 日程</button>
+  <button class="nbtn" onclick="showPage('food',this)">🍜 グルメ</button>
+  <button class="nbtn" onclick="showPage('booking',this)">✅ 予約</button>
+  <button class="nbtn" onclick="showPage('packing',this)">🎒 持ち物</button>
+  <button class="nbtn" onclick="showPage('missions',this)">🏆 ミッション</button>
+</nav>
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="stitle"><span>🗺</span>北海道ルートマップ</div>
+  <div id="main-map"></div>
+  <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">📍 マーカーをタップするとスポット情報が表示されます</p>
+</div>
+
+<!-- SCHEDULE -->
+<div id="page-schedule" class="page">
+  <div class="stitle"><span>📅</span>全日程</div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- DAY DETAIL (shared) -->
+<div id="page-day" class="page">
+  <div id="day-content"></div>
+</div>
+
+<!-- FOOD -->
+<div id="page-food" class="page">
+  <div class="stitle"><span>🍜</span>絶対食べたいリスト</div>
+  <div id="food-list"></div>
+</div>
+
+<!-- BOOKING -->
+<div id="page-booking" class="page">
+  <div class="stitle"><span>✅</span>予約ステータス</div>
+  <div id="booking-list"></div>
+  <br>
+  <div class="stitle"><span>📋</span>出発前チェックリスト</div>
+  <div class="prog-label" id="check-label">0 / 0 完了</div>
+  <div class="prog-wrap"><div class="prog-bar" id="check-bar" style="width:0%;background:linear-gradient(90deg,var(--forest),var(--sky))"></div></div>
+  <div id="checklist-wrap"></div>
+  <button class="save-btn" onclick="saveAll()">💾 チェックを保存</button>
+</div>
+
+<!-- PACKING -->
+<div id="page-packing" class="page">
+  <div class="stitle"><span>🎒</span>持ち物リスト</div>
+  <div class="prog-label" id="pack-label">0 / 0 完了</div>
+  <div class="prog-wrap"><div class="prog-bar" id="pack-bar" style="width:0%;background:linear-gradient(90deg,var(--orange),var(--yellow))"></div></div>
+  <div class="pack-grid" id="pack-grid"></div>
+  <button class="save-btn" onclick="saveAll()">💾 持ち物を保存</button>
+</div>
+
+<!-- MISSIONS -->
+<div id="page-missions" class="page">
+  <div class="stitle"><span>🏆</span>父と息子のミッション</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:16px">達成したらタップ！全部クリアできるかな？</p>
+  <div class="prog-label" id="mission-label">0 / 0 達成</div>
+  <div class="prog-wrap"><div class="prog-bar" id="mission-bar" style="width:0%;background:linear-gradient(90deg,var(--orange),var(--yellow))"></div></div>
+  <br>
+  <div id="mission-list"></div>
+  <button class="save-btn" onclick="saveAll()">💾 ミッションを保存</button>
+</div>
+
+<div class="footer">🐻 北海道冒険旅行 2026 | 父ちゃんと息子の最高の夏<br><small>チェック・ミッションはブラウザに自動保存されます</small></div>
+
+<script>
+// ===========================
+// DATA
+// ===========================
+const days = [
+ {
+  date:'8/2（日）', day:'Day 1', emoji:'🚢', color:'#1a6fa8',
+  title:'出発！フェリーで北へ',
+  sub:'湘南台→東京→新潟港→フェリー乗船',
+  stay:'フェリー（新潟→小樽）', stayOk:true, stayNote:'スイートルーム002 予約番号:110188331',
+  lat:37.934, lng:139.076, zoom:12,
+  spots:[
+    { emoji:'🚄', name:'上越新幹線 とき305号', desc:'東京7:48発 → 新潟9:51着。2人席（A・B）を確保！',
+      time:'約2時間', cost:'約11,290円（事前受付済み）', tips:'指定席なので早めに乗車口へ。駅弁を買おう！',
+      must:false, lat:35.681, lng:139.767 },
+    { emoji:'⚓', name:'新潟港フェリーターミナル', desc:'12:00出航！e乗船券（QRコード）を印刷して持参すると窓口不要でスムーズ。',
+      time:'集合 10:30まで', cost:'済（102,000円精算済み）', tips:'夏休みは90分前までに到着必須。タクシーで約15分・1,500円',
+      must:true, lat:37.934, lng:139.076 },
+    { emoji:'🚢', name:'新日本海フェリー（船内）', desc:'スイートルーム002（左舷）。出港後に佐渡島が左に見える！翌朝4:30小樽着。',
+      time:'約16時間半', cost:'込み', tips:'船内にレストラン・お風呂あり。翌朝は早起きして入港を見よう！',
+      must:true, lat:37.9, lng:138.8 },
+  ],
+  food:[], note:'✅ 事前受付申込済み・7/2結果確認'
+ },
+ {
+  date:'8/3（月）', day:'Day 2', emoji:'🦀', color:'#0d7a5f',
+  title:'小樽朝市！札幌へ',
+  sub:'小樽港着→三角市場→運河→札幌CLH受取',
+  stay:'シャトレーゼ ガトーキングダム札幌', stayOk:true, stayNote:'2食付 RYa0mvdxze チェックイン15:00',
+  lat:43.195, lng:141.002, zoom:12,
+  spots:[
+    { emoji:'🐟', name:'小樽三角市場', desc:'北のどんぶり屋 滝波食堂でわがまま丼！10種のネタから3〜4種を自分で選ぶ丼。ウニはミョウバン不使用の海水ウニ。',
+      time:'1〜1.5時間', cost:'丼 1,500〜3,000円', tips:'駅徒歩1分。早朝から開いているので入港後すぐ直行！',
+      must:true, lat:43.190, lng:140.994 },
+    { emoji:'🏛', name:'小樽運河', desc:'全長1,140mの歴史的運河。石造りの倉庫とガス灯が並ぶ。浅草橋が写真スポット。',
+      time:'30分', cost:'無料', tips:'朝は混んでいないのでゆっくり写真が撮れる！',
+      must:false, lat:43.196, lng:140.999 },
+    { emoji:'🛒', name:'堺町通り（お土産・スイーツ）', desc:'ルタオ本店をはじめスイーツ・ガラス工芸・お土産が集まる観光メインストリート。',
+      time:'1〜1.5時間', cost:'ルタオドゥーブルフロマージュ2,000円〜', tips:'店は18時頃閉まるので昼のうちに回ろう。',
+      must:false, lat:43.189, lng:141.003 },
+    { emoji:'🚐', name:'CLH キャンピングカー受取（札幌駅）', desc:'Van EN1受取。8,000円の送迎で札幌駅まで来てくれる。これが旅のメイン乗り物！',
+      time:'手続き30分', cost:'済（385,110円総額）', tips:'レンタカー会社の担当者にキャンプ場等の情報を聞こう。',
+      must:true, lat:43.069, lng:141.351 },
+  ],
+  food:[
+    { emoji:'🦀', name:'わがまま丼', shop:'北のどんぶり屋 滝波食堂', note:'ウニ・イクラ・カニを自分でトッピング！', done:false },
+    { emoji:'🥪', name:'サンドリア', shop:'サンドリア 札幌', note:'CLH受取前のランチに！', done:false },
+    { emoji:'🍮', name:'ルタオ ドゥーブルフロマージュ', shop:'ルタオ本店（堺町通り）', note:'小樽を代表するチーズケーキ', done:false },
+  ]
+ },
+ {
+  date:'8/4（火）', day:'Day 3', emoji:'🌸', color:'#9b59b6',
+  title:'美瑛の丘を走る！',
+  sub:'青い池・白ひげの滝・四季彩の丘・ぜるぶの丘',
+  stay:'藍染結の杜 RVパーク', stayOk:true, stayNote:'7番サイト RV674-34478 チェックイン13:00',
+  lat:43.578, lng:142.488, zoom:12,
+  spots:[
+    { emoji:'💧', name:'青い池', desc:'白金温泉の上流から流れる硫黄成分とアルミニウムが混ざり生まれた神秘のコバルトブルー。倒れた木々が幻想的。',
+      time:'30〜45分', cost:'駐車場500円', tips:'早朝は霧がかかって特に幻想的！混む前に行こう。',
+      must:true, lat:43.598, lng:142.504 },
+    { emoji:'🌊', name:'白ひげの滝', desc:'青い池から車で5分。温泉成分が混ざったエメラルドグリーンの川に、岩肌から直接湧き出す滝が流れ込む。',
+      time:'15分', cost:'無料', tips:'青い池とセットで回ろう。橋の上から見るのがベスト。',
+      must:false, lat:43.587, lng:142.486 },
+    { emoji:'🌈', name:'四季彩の丘', desc:'ラベンダー・ひまわり・コスモス等15種以上の花が丘一面に咲き乱れる。8月はひまわりとサルビアが見頃！',
+      time:'1〜1.5時間', cost:'花畑協力金200円 / ノロッコ号乗車500円', tips:'美瑛産牛乳のソフトクリーム（かぼちゃ・ミルク）が絶品！必食。',
+      must:true, lat:43.563, lng:142.480 },
+    { emoji:'🌻', name:'ぜるぶの丘', desc:'8月はひまわり畑が圧巻！全方向に丘と花が広がる。カートで丘を走り回ることもできる。',
+      time:'30〜45分', cost:'入場無料 / カート500円〜', tips:'四季彩の丘から車で5分。子供はカートに乗りたがるはず！',
+      must:false, lat:43.567, lng:142.489 },
+    { emoji:'🗺', name:'パッチワークの路', desc:'農地の色の違いが作るモザイク模様の丘陵。クリスマスツリーの木・ケンとメリーの木などフォトスポット多数。',
+      time:'車でドライブ30分', cost:'無料', tips:'夕方の光が丘を黄金色に照らして最高に美しい！',
+      must:false, lat:43.578, lng:142.462 },
+  ],
+  food:[
+    { emoji:'🍦', name:'ソフトクリーム（かぼちゃ）', shop:'四季彩の丘内', note:'北海道産牛乳！ぜひ食べて', done:false },
+  ]
+ },
+ {
+  date:'8/5（水）', day:'Day 4', emoji:'🦁', color:'#e67e22',
+  title:'旭山動物園で大興奮！',
+  sub:'旭山動物園→旭川ラーメン→Johnny Base',
+  stay:'Johnny Base RVパーク', stayOk:true, stayNote:'電話予約済み',
+  lat:43.769, lng:142.415, zoom:12,
+  spots:[
+    { emoji:'🦁', name:'旭山動物園', desc:'日本最北の動物園。「行動展示」が革命的で動物が活き活き動く。ペンギン空中散歩・ホッキョクグマ水中ガラス・オランウータン空中散歩が必見！',
+      time:'3〜4時間', cost:'大人1,100円 / 小学生無料（旭川市在住以外は有料）', tips:'開園直後（9:30）に入場すると空いている。お盆は大混雑必至。ペンギンの散歩は11:00〜と14:30〜！',
+      must:true, lat:43.771, lng:142.481 },
+    { emoji:'🍜', name:'旭川らぅめん 青葉 本店', desc:'1947年創業の旭川ラーメンの原点。豚骨・鶏ガラに利尻昆布・鰹節・煮干しを加えたWスープ。ラードで最後まで熱々！',
+      time:'30〜45分', cost:'正油らぅめん 900円〜', tips:'動物園後11:00台に向かうのがベスト。開店前から並び始めることも。',
+      must:true, lat:43.771, lng:142.365 },
+    { emoji:'🍦', name:'旭川ミルクスタンド', desc:'おこっぺ牛乳を使った濃厚なめらかソフトクリーム。旭山動物園内でも売っている。',
+      time:'15分', cost:'400円〜', tips:'動物園内で食べながら歩くのが楽しい！',
+      must:false, lat:43.771, lng:142.481 },
+  ],
+  food:[
+    { emoji:'🍜', name:'旭川ラーメン', shop:'旭川らぅめん青葉（1947年創業）', note:'Wスープが絶品！11時開店直後狙い', done:false },
+  ]
+ },
+ {
+  date:'8/6（木）', day:'Day 5', emoji:'🏔', color:'#2980b9',
+  title:'層雲峡の絶壁！温泉へ',
+  sub:'層雲峡→銀河の滝・流星の滝→温根湯温泉',
+  stay:'温根湯温泉 大江本家', stayOk:true, stayNote:'RYa0mviht6 チェックイン15:00',
+  lat:43.733, lng:143.0, zoom:11,
+  spots:[
+    { emoji:'💦', name:'流星の滝・銀河の滝', desc:'同じ駐車場から両方見られる北海道屈指の名瀑コンビ！落差90mの雄大な流星と、繊細な銀河。大雨後は迫力が増す。',
+      time:'30〜45分', cost:'駐車場無料', tips:'駐車場から徒歩数分。両方見比べてどっちが好きか話してみよう。',
+      must:true, lat:43.745, lng:142.873 },
+    { emoji:'🗻', name:'層雲峡（柱状節理の断崖）', desc:'高さ最大200mの柱状節理の岸壁が8kmにわたって続く渓谷。大函・小函は特に圧巻。石狩川が流れる大自然。',
+      time:'1〜1.5時間', cost:'無料（駐車場あり）', tips:'キャンピングカーは大函への道が狭い場合あり。事前確認推奨。',
+      must:true, lat:43.741, lng:142.886 },
+    { emoji:'🚡', name:'層雲峡ロープウェイ（任意）', desc:'黒岳5合目まで約7分。高山植物が咲き、晴れれば大雪山系が一望できる。時間と体力次第。',
+      time:'往復1.5〜2時間', cost:'大人1,900円 小人950円', tips:'体力があれば5合目から歩いて7合目まで行ける（往復1時間）。',
+      must:false, lat:43.740, lng:142.887 },
+    { emoji:'♨️', name:'温根湯温泉 大江本家', desc:'今夜の宿。地元の食材を使った豪華な夕食付き。弱アルカリ性の温泉で旅の疲れを癒す。',
+      time:'チェックイン15:00〜', cost:'済（楽天トラベル予約済み）', tips:'夕食前に温泉に入っておくと最高！',
+      must:true, lat:43.724, lng:143.128 },
+  ],
+  food:[
+    { emoji:'🍱', name:'旅館の夕食', shop:'温根湯温泉 大江本家', note:'地元食材たっぷりの豪華夕食！', done:false },
+  ]
+ },
+ {
+  date:'8/7（金）', day:'Day 6', emoji:'🔒', color:'#7f8c8d',
+  title:'網走！監獄リアル体験',
+  sub:'網走監獄→オホーツク流氷館→ABASHIRI BAY',
+  stay:'ABASHIRI BAY RVパーク', stayOk:true, stayNote:'20A電源付A RV574-34480 チェックイン13:00',
+  lat:44.015, lng:144.269, zoom:13,
+  spots:[
+    { emoji:'🔒', name:'博物館 網走監獄', desc:'明治時代に実際に使われた刑務所を保存・移築した野外博物館。囚人が北海道開拓に駆り出された歴史がリアルにわかる。蝦夷の地の過酷な労働や当時の生活が体感できる。',
+      time:'2〜2.5時間', cost:'大人1,500円 / 小中学生750円', tips:'刑務所食（監獄食）を食べる体験もある！子供に大ウケ間違いなし。',
+      must:true, lat:44.014, lng:144.273 },
+    { emoji:'🧊', name:'オホーツク流氷館', desc:'年間通じて流氷を展示。マイナス15℃の体感コーナーでは濡れたタオルが数秒で凍る！クリオネも見られる。',
+      time:'45分〜1時間', cost:'大人990円 / 小中学生770円', tips:'Tシャツで入ると一瞬で寒い！羽織るものを持参しよう。夏限定の体験。',
+      must:true, lat:44.018, lng:144.266 },
+    { emoji:'🌅', name:'天都山展望台', desc:'網走湖・能取湖・サロマ湖・斜里岳などが一望できるオホーツクの絶景スポット。流氷館のすぐそば。',
+      time:'15分', cost:'無料', tips:'夕暮れ時はオホーツクが黄金色に染まって最高！',
+      must:false, lat:44.020, lng:144.265 },
+  ],
+  food:[
+    { emoji:'🦀', name:'オホーツク海鮮（毛ガニ・ホタテ）', shop:'網走市内の海鮮食堂', note:'毛ガニはここが安くてうまい！', done:false },
+    { emoji:'🍽', name:'監獄食体験', shop:'博物館 網走監獄内', note:'麦飯・みそ汁・漬物の質素なご飯！', done:false },
+  ]
+ },
+ {
+  date:'8/8（土）', day:'Day 7', emoji:'⛴', color:'#16a085',
+  title:'知床クルーズ！伝説の朝',
+  sub:'おーろら8:30便→海鮮丼→知床五湖',
+  stay:'北こぶし知床', stayOk:true, stayNote:'シービューツインハイフロア RYa0mviipy チェックイン15:00',
+  lat:44.088, lng:145.030, zoom:11,
+  spots:[
+    { emoji:'⛴', name:'知床おーろら 301便（8:30出発）', desc:'カムイワッカの滝航路。断崖絶壁・ヒグマ出没ポイント・カムイワッカの滝を船上から。約1時間30分。✅予約番号:260808206369',
+      time:'8:15 乗船場集合', cost:'大人5,000円 / 小人2,500円（済）', tips:'早朝の海は穏やか。防寒のための羽織りもの必須！帰港後すぐ食堂へダッシュ。',
+      must:true, lat:44.077, lng:144.994 },
+    { emoji:'🐟', name:'ウトロ漁協婦人部食堂', desc:'帰港直後に並ぶ！毛ガニ・ホタテ・ウニ・イクラが丼に。8:30〜14:30。日本最高峰の新鮮さ。',
+      time:'45分〜1時間（行列込み）', cost:'海鮮丼 2,000〜4,000円', tips:'⚠️ 超人気店。帰港後10:00頃にはすでに行列。1人が並んで1人がトイレ作戦！',
+      must:true, lat:44.079, lng:145.001 },
+    { emoji:'🏞', name:'知床五湖', desc:'世界自然遺産の湖群。高架木道（約1.6km）は予約不要でヒグマを気にせず歩ける。地上遊歩道はガイド必須。',
+      time:'高架木道 1〜1.5時間', cost:'高架木道 無料 / 地上遊歩道 250〜500円（環境保全協力金）', tips:'ヒグマ目撃情報によっては閉鎖になることも。入口で確認を！',
+      must:true, lat:44.086, lng:145.057 },
+    { emoji:'🌊', name:'カムイワッカ湯の滝', desc:'川全体が温泉の滝！一の滝（下流）までは一般的に入れる。川を遡上して滝に近づくと温度がどんどん上がる。',
+      time:'1〜1.5時間', cost:'無料', tips:'濡れても大丈夫な格好で！裸足か水陸両用サンダルがベスト。滑るので注意。',
+      must:false, lat:44.113, lng:145.104 },
+  ],
+  food:[
+    { emoji:'🐟', name:'知床海鮮丼', shop:'ウトロ漁協婦人部食堂', note:'帰港後すぐダッシュ！行列必至', done:false },
+    { emoji:'🍦', name:'知床塩ソフトクリーム', shop:'ウトロ市内各所', note:'知床でしか食べられない！', done:false },
+  ]
+ },
+ {
+  date:'8/9（日）', day:'Day 8', emoji:'🌋', color:'#8e44ad',
+  title:'摩周湖・火山・釧路へ',
+  sub:'屈斜路湖砂湯→硫黄山→摩周湖→釧路',
+  stay:'釧路市山花公園オートキャンプ場', stayOk:false, stayNote:'⚠️ 7/1 9:00予約開始！カレンダー登録済み',
+  lat:43.593, lng:144.450, zoom:11,
+  spots:[
+    { emoji:'♨️', name:'屈斜路湖・砂湯', desc:'日本最大のカルデラ湖の砂浜。砂を掘ると温泉が湧き出す！無料で足湯が楽しめる。白鳥も多い。',
+      time:'30〜45分', cost:'無料', tips:'掘る棒は持参するか近くの売店で購入。深さ20〜30cmで温泉が出る！',
+      must:true, lat:43.609, lng:144.361 },
+    { emoji:'💨', name:'硫黄山（アトサヌプリ）', desc:'活火山の噴気孔が至近距離で見られる！硫黄の臭いが立ちこめ、ゴゴゴと地響きが。地球が生きていると実感。',
+      time:'30〜45分', cost:'無料', tips:'風向きにより硫黄臭が強烈な日も。ここで売っているゆで卵（温泉卵）が絶品！',
+      must:true, lat:43.596, lng:144.433 },
+    { emoji:'🌫', name:'摩周湖 第一展望台', desc:'世界有数の透明度を誇る神秘の湖。霧に包まれることが多く「霧の摩周湖」として有名。晴れた日の神秘的な青さも絶景。',
+      time:'30〜45分', cost:'駐車場500円', tips:'晴れの摩周湖を見ると恋が実らないというジンクスがある。父と息子には関係ないので全力で晴れを祈ろう！',
+      must:true, lat:43.574, lng:144.529 },
+    { emoji:'🏕', name:'釧路市山花公園オートキャンプ場', desc:'釧路湿原西側の大自然の中のキャンプ場。動物園・山花温泉リフレが隣接。キャンピングカーサイトは電源・上下水道付き。',
+      time:'チェックイン（要確認）', cost:'3,800円（7/1 9:00予約開始！）', tips:'動物園とセットで利用する家族が多い。温泉リフレで入浴もできる。',
+      must:true, lat:43.012, lng:144.345 },
+  ],
+  food:[
+    { emoji:'🍜', name:'摩周そば', shop:'摩周湖周辺食堂', note:'湧き水で打った絶品そば', done:false },
+    { emoji:'🥚', name:'硫黄山の温泉卵', shop:'硫黄山売店', note:'火山で作ったゆで卵！絶対買って', done:false },
+  ],
+  note:'⚠️ 7/1 9:00 予約開始！カレンダー登録済み'
+ },
+ {
+  date:'8/10（月）', day:'Day 9', emoji:'🛶', color:'#27ae60',
+  title:'釧路でモーニングカヌー！',
+  sub:'釧路カヌー8:15集合→釧路湿原→帯広',
+  stay:'十勝わっかの森', stayOk:true, stayNote:'予約番号:2271 チェックイン16:00',
+  lat:43.120, lng:144.380, zoom:11,
+  spots:[
+    { emoji:'🛶', name:'釧路マーシュ&リバー カヌー', desc:'朝8:15集合。島崎さんが同乗するガイド付き。塘路湖〜釧路川をゆっくり下る。タンチョウ・エゾシカ・キタキツネと出会えるかも。✅予約済み 16,500円現金',
+      time:'8:15集合 / 約2時間', cost:'16,500円現金（済）', tips:'朝の川は霧がかかって幻想的！虫除けスプレー必須。濡れても大丈夫な格好で。',
+      must:true, lat:43.235, lng:144.401 },
+    { emoji:'🌿', name:'釧路湿原展望台', desc:'日本最大の湿原を一望できる展望台。カヌーで下った川が眼下に見える！',
+      time:'30分', cost:'無料', tips:'カヌー後に立ち寄るとルートが分かってより感動！',
+      must:false, lat:43.112, lng:144.369 },
+    { emoji:'🔭', name:'細岡展望台', desc:'蛇行する釧路川と湿原が一望できる絶景ポイント。展望台へのアクセスも容易。',
+      time:'30分', cost:'無料', tips:'夕方の光が湿原を黄金色に染める時間帯が最高！',
+      must:false, lat:43.155, lng:144.430 },
+  ],
+  food:[
+    { emoji:'🍜', name:'釧路ラーメン', shop:'釧路市内', note:'細麺・あっさり醤油がカヌーの後に最高', done:false },
+    { emoji:'🐓', name:'ザンギ', shop:'釧路の居酒屋・定食屋', note:'釧路発祥の北海道風唐揚げ！', done:false },
+  ]
+ },
+ {
+  date:'8/11（火）', day:'Day 10', emoji:'🐎', color:'#c0392b',
+  title:'十勝牧場→帯広豚丼！',
+  sub:'十勝牧場→ばんえい競馬→豚丼→花ロード恵庭',
+  stay:'花ロード恵庭 RVパーク', stayOk:true, stayNote:'3,000円 現地決済 チェックイン14:30',
+  lat:42.920, lng:143.195, zoom:12,
+  spots:[
+    { emoji:'🐄', name:'十勝牧場 白樺並木', desc:'広大な牧場の中を走る一直線の白樺並木。馬や牛が放牧されている姿を眺められる。スケールが桁違い。',
+      time:'30〜45分', cost:'無料', tips:'朝早い方が霧がかかって幻想的。牧場道路は一般開放されているので車で走れる。',
+      must:true, lat:42.981, lng:143.209 },
+    { emoji:'🐎', name:'ばんえい競馬（帯広競馬場）', desc:'世界唯一の農耕馬（ばん馬）レース！重さ1トン前後の馬が最大1トンのソリを引いて障害を越える。迫力が桁違い。',
+      time:'1〜2時間', cost:'入場100円 / 馬券100円〜', tips:'障害を越える瞬間の応援は最高！100円馬券を買って馬券の楽しみも。',
+      must:true, lat:42.915, lng:143.193 },
+    { emoji:'🥩', name:'ぶた丼のとん田', desc:'ミシュランビブグルマン獲得の帯広豚丼の名店。十勝産上質豚を手切り。ロース・バラ・ヒレから選べる。',
+      time:'待ち時間込み1〜1.5時間', cost:'豚丼860円〜', tips:'⚠️ お盆は開店前から行列！10:45頃から並ぶのが鉄則。11:00開店。',
+      must:true, lat:42.921, lng:143.179 },
+    { emoji:'🍰', name:'六花亭 帯広本店', desc:'北海道を代表するお菓子メーカーの本店。マルセイバターサンド・ストロベリーチョコが有名。2階カフェも好評。',
+      time:'30〜45分', cost:'バターサンド6個入り1,080円', tips:'本店限定品もあるのでチェック！ここで買うのがお土産の定番。',
+      must:false, lat:42.919, lng:143.197 },
+  ],
+  food:[
+    { emoji:'🥩', name:'帯広豚丼', shop:'ぶた丼のとん田（ミシュランビブグルマン）', note:'10:45から並ぶ！開店11時', done:false },
+    { emoji:'🍰', name:'六花亭スイーツ', shop:'六花亭 帯広本店', note:'マルセイバターサンドを本場で', done:false },
+  ]
+ },
+ {
+  date:'8/12（水）', day:'Day 11', emoji:'🏛', color:'#2c3e50',
+  title:'ウポポイ！アイヌ文化体験',
+  sub:'白老・ウポポイ→千歳・新千歳空港BASE',
+  stay:'RVパーク 旅する車 新千歳空港BASE', stayOk:true, stayNote:'③番 RV558-34884 チェックイン15:00',
+  lat:42.650, lng:141.520, zoom:10,
+  spots:[
+    { emoji:'🪘', name:'ウポポイ（民族共生象徴空間）', desc:'アイヌ文化を体感・学ぶ国立施設。国立アイヌ民族博物館・体験交流ホール・工房・ポロト湖が一体になった広大な施設。伝統音楽「ウポポ」の生演奏も。',
+      time:'3〜4時間', cost:'大人1,200円 / 高校生600円 / 中学生以下無料', tips:'体験プログラム（弓矢・刺繍など）は要予約。ポロト湖沿いの散歩が気持ちいい！',
+      must:true, lat:42.555, lng:141.354 },
+    { emoji:'🌊', name:'ポロト湖', desc:'ウポポイに隣接する美しい湖。湖畔を散策するだけで絶景。施設内からもアイヌ式のチセ（家）が見渡せる。',
+      time:'30分', cost:'無料（ウポポイ入場料込み）', tips:'湖越しに見るウポポイの施設が絵になる写真スポット！',
+      must:false, lat:42.554, lng:141.351 },
+    { emoji:'✈️', name:'RVパーク 旅する車 新千歳空港BASE', desc:'新千歳空港に隣接するRVパーク。飛行機の離着陸が間近で見える！電源・トイレ完備。最後の夜にふさわしいロケーション。',
+      time:'チェックイン15:00〜', cost:'7,128円（③番サイト 済）', tips:'夜は滑走路のライトが幻想的。明日の帰宅に備えて荷物を整理しよう。',
+      must:true, lat:42.780, lng:141.693 },
+  ],
+  food:[
+    { emoji:'🪘', name:'アイヌ料理体験', shop:'ウポポイ内レストラン', note:'オハウ（鍋料理）など伝統食に挑戦！', done:false },
+  ]
+ },
+ {
+  date:'8/13（木）', day:'Day 12', emoji:'✈️', color:'#e74c3c',
+  title:'いよいよ帰路！思い出いっぱい',
+  sub:'CLH返却→新千歳空港→羽田',
+  stay:'帰宅！', stayOk:true, stayNote:'AIRDO ADO024 13:30発 37F/37G席 EV462F',
+  lat:42.777, lng:141.693, zoom:14,
+  spots:[
+    { emoji:'🚐', name:'CLH キャンピングカー返却', desc:'10:00チェックアウト後に新千歳空港へ送迎。11日間お世話になったVan EN1ともお別れ。',
+      time:'チェックアウト10:00', cost:'送迎9,000円（済）', tips:'返却前に荷物の積み忘れがないか必ず確認！ガソリンも忘れずに。',
+      must:true, lat:42.775, lng:141.690 },
+    { emoji:'🍫', name:'ロイズチョコレートワールド', desc:'新千歳空港内にあるロイズの工場直売。製造工程が見学できる！生チョコ・ポテトチップチョコが人気。',
+      time:'30〜45分', cost:'生チョコ 756円〜', tips:'要冷蔵品は保冷バッグを購入して持ち帰り。家族へのお土産の定番。',
+      must:true, lat:42.779, lng:141.693 },
+    { emoji:'🍜', name:'新千歳空港ラーメン道場', desc:'北海道各地の有名ラーメン店が集結した「ラーメン道場」。旭川・札幌・函館の3スタイルを食べ比べ。',
+      time:'45分', cost:'900〜1,500円', tips:'帰りの飛行機の前の最後のランチ！混雑するので13時より前に行こう。',
+      must:false, lat:42.778, lng:141.692 },
+    { emoji:'✈️', name:'AIRDO ADO024便（13:30発）', desc:'座席37F（息子）・37G（父）。新千歳空港13:30 → 羽田空港15:10着。11日間の冒険の幕を閉じる。',
+      time:'搭乗 12:50頃', cost:'済（EV462F）', tips:'搭乗口は早めに確認。機内から北海道の景色が見えるかも！',
+      must:true, lat:42.774, lng:141.692 },
+  ],
+  food:[
+    { emoji:'🍫', name:'ロイズ生チョコレート', shop:'ロイズチョコレートワールド（空港内）', note:'お土産の王様！', done:false },
+    { emoji:'🍜', name:'北海道ラーメン最後の一杯', shop:'新千歳空港ラーメン道場', note:'旭川・札幌・函館どれにする？', done:false },
+    { emoji:'🍪', name:'白い恋人・六花亭 まとめ買い', shop:'新千歳空港内各店', note:'家族・職場へのお土産！忘れずに', done:false },
+  ]
+ },
+];
+
+const allFood = [];
+days.forEach((d,di) => {
+  d.food.forEach((f,fi) => {
+    allFood.push({ ...f, dayIdx:di, foodIdx:fi, key:`f_${di}_${fi}` });
+  });
+});
+
+const bookings = [
+  { name:'🚢 フェリー（新潟→小樽）', date:'8/2 12:00発', status:'ok', note:'スイートルーム002 予約番号:110188331' },
+  { name:'🚄 上越新幹線（東京→新潟）', date:'8/2 7:48', status:'warn', note:'事前受付済み・7/2 10:00結果確認！' },
+  { name:'🚐 CLH キャンピングカー', date:'8/3〜8/13', status:'ok', note:'Van EN1・札幌駅受取→新千歳返却 R6901726432' },
+  { name:'✈️ AIRDO ADO024便', date:'8/13 13:30', status:'ok', note:'新千歳→羽田 37F/37G EV462F' },
+  { name:'🏨 シャトレーゼ ガトーキングダム', date:'8/3', status:'ok', note:'2食付 RYa0mvdxze' },
+  { name:'🏕 藍染結の杜 RVパーク', date:'8/4', status:'ok', note:'7番サイト RV674-34478' },
+  { name:'🏕 Johnny Base（旭川）', date:'8/5', status:'ok', note:'電話予約済み' },
+  { name:'♨️ 温根湯温泉 大江本家', date:'8/6', status:'ok', note:'RYa0mviht6' },
+  { name:'🏕 ABASHIRI BAY', date:'8/7', status:'ok', note:'20A電源付A RV574-34480' },
+  { name:'🏨 北こぶし知床', date:'8/8', status:'ok', note:'シービューツインハイフロア RYa0mviipy' },
+  { name:'🏕 山花公園オートキャンプ場', date:'8/9', status:'warn', note:'⚠️ 7/1 9:00予約開始！カレンダー登録済み' },
+  { name:'🏕 十勝わっかの森', date:'8/10', status:'ok', note:'予約番号:2271' },
+  { name:'🏕 花ロード恵庭', date:'8/11', status:'ok', note:'3,000円現地決済' },
+  { name:'🏕 新千歳空港BASE', date:'8/12', status:'ok', note:'③番 RV558-34884' },
+  { name:'⛴ 知床おーろら 301便', date:'8/8 8:30', status:'ok', note:'カムイワッカの滝 予約番号:260808206369' },
+  { name:'🛶 釧路カヌー マーシュ&リバー', date:'8/10 8:15集合', status:'ok', note:'島崎さん担当 16,500円現金' },
+];
+
+const checklistData = [
+  { cat:'出発前', items:[
+    { label:'フェリーe乗船券（QRコード）を全員分印刷', note:'マイページ→e乗船券発行' },
+    { label:'千代のエサを準備', note:'' },
+    { label:'ALARMOの電源を抜く', note:'' },
+    { label:'CAMPスマートチェックインアプリ確認', note:'RECAMP系施設で必要' },
+    { label:'新幹線予約確認（7/2 10:00）', note:'えきねっとマイページ' },
+    { label:'山花公園キャンプ場を予約（7/1 9:00）', note:'⚠️ 7/1 9:00に予約！' },
+  ]},
+  { cat:'持ち物最終確認', items:[
+    { label:'コンタクトレンズ＋スペアのメガネ', note:'忘れると大変！' },
+    { label:'酔い止め（フェリー・山道用）', note:'' },
+    { label:'薬類・救急セット', note:'' },
+    { label:'ウナ（虫刺され薬）', note:'北海道は虫が多い' },
+    { label:'蚊取り線香', note:'' },
+    { label:'ドローン＋充電器・バッテリー', note:'' },
+    { label:'雨具（上下）', note:'夏でも急な雨に注意' },
+    { label:'Nintendo Switch 2 ×2台', note:'充電器も忘れずに' },
+  ]},
+];
+
+const packingData = [
+  { cat:'🛏 寝具・くつろぎ', items:['まくら','寝袋 ×2','ハンガー（物干し用）','延長コード'] },
+  { cat:'🍳 アウトドア・調理', items:['ガスバーナー','ミニ焚火台','フライパン・メスティン','ナイフ','ほりにし（スパイス）','味塩コショウ','割りばし','紙皿','たふまる（カセットコンロ）'] },
+  { cat:'🎮 遊び・趣味', items:['プールセット','ドローン','双眼鏡','Nintendo Switch 2 ×2台','カードゲーム','本'] },
+  { cat:'💊 衛生・健康', items:['コンタクトレンズ','スペアのメガネ','酔い止め','薬類','蚊取り線香','ウナ（虫刺され）'] },
+  { cat:'👕 その他', items:['雨具（上下）','帽子','洗濯ロープ'] },
+  { cat:'🏕 CLHで借りるもの', items:['ガスコンロ','テーブル'] },
+];
+
+const missions = [
+  { emoji:'🛶', title:'カヌーで野生動物に遭遇', desc:'釧路の朝の湿原でエゾシカかタンチョウを見つけよう！' },
+  { emoji:'⛴', title:'おーろらから滝を船上で見る', desc:'カムイワッカの滝を激写せよ！' },
+  { emoji:'🐻', title:'ヒグマの痕跡を発見', desc:'爪痕・足跡・糞…どれか発見したらOK（生熊はNG笑）' },
+  { emoji:'🌊', title:'カムイワッカの滝を登る', desc:'温泉の川を遡上して一の滝まで到達！' },
+  { emoji:'🔥', title:'焚き火でほりにし飯を作る', desc:'ミニ焚火台で自作キャンプ飯！' },
+  { emoji:'📸', title:'絵葉書みたいな1枚を撮る', desc:'美瑛の丘か知床の絶景でこれだ！という写真を撮る' },
+  { emoji:'⭐', title:'満天の星を二人で見上げる', desc:'キャンプ場で星座をひとつ見つけよう' },
+  { emoji:'🏇', title:'ばんえい競馬で馬券を買う', desc:'世界唯一の農耕馬レースに参加！当たったら最高' },
+  { emoji:'♨️', title:'砂湯で温泉を掘り当てる', desc:'屈斜路湖の砂を掘って温泉を発見せよ！' },
+  { emoji:'🦀', title:'ウニ丼を二人で完食', desc:'知床でほんまもんのウニ丼を食べ切れ！' },
+  { emoji:'🗺', title:'ドローンで北海道の空撮', desc:'大自然の上空でドローンを飛ばして絶景撮影！' },
+  { emoji:'🤝', title:'旅先で地元の人と仲良くなる', desc:'RVパークや市場で地元の人と話してみよう' },
+];
+
+// ===========================
+// STATE
+// ===========================
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('hk26') || '{}'); }
+  catch { return {}; }
+}
+let ST = loadState();
+function saveAll() {
+  localStorage.setItem('hk26', JSON.stringify(ST));
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = '✅ 保存しました！';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// ===========================
+// NAV / PAGES
+// ===========================
+let dayMaps = {};
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nbtn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'home') setTimeout(initMainMap, 80);
+}
+
+function showDayPage(idx) {
+  buildDayDetail(idx);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-day').classList.add('active');
+  document.querySelectorAll('.nbtn').forEach(b => b.classList.remove('active'));
+  window.scrollTo(0, 0);
+  setTimeout(() => initDayMap(idx), 150);
+}
+
+function goBack() {
+  showPage('schedule');
+  document.querySelectorAll('.nbtn')[1].classList.add('active');
+}
+
+// ===========================
+// MAIN MAP
+// ===========================
+let mainMapInited = false;
+function initMainMap() {
+  if (mainMapInited) return;
+  mainMapInited = true;
+  const m = L.map('main-map').setView([43.5, 143.0], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap contributors'}).addTo(m);
+  const pts = days.map(d => [d.lat, d.lng]);
+  L.polyline(pts, {color:'#e8721c', weight:3, dashArray:'8,5'}).addTo(m);
+  days.forEach((d, i) => {
+    const icon = L.divIcon({
+      html:`<div style="background:${d.color};color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">${d.emoji}</div>`,
+      iconSize:[36,36], iconAnchor:[18,18], className:''
+    });
+    L.marker([d.lat, d.lng], {icon}).bindPopup(`<b>${d.day}｜${d.date}</b><br>${d.title}`).addTo(m);
+  });
+}
+
+// ===========================
+// DAY MAP
+// ===========================
+function initDayMap(idx) {
+  if (dayMaps[idx]) return;
+  const d = days[idx];
+  const el = document.getElementById(`dmap-${idx}`);
+  if (!el) return;
+  const m = L.map(`dmap-${idx}`).setView([d.lat, d.lng], d.zoom || 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap contributors'}).addTo(m);
+  const bounds = [];
+  d.spots.forEach((s, si) => {
+    if (!s.lat || !s.lng) return;
+    bounds.push([s.lat, s.lng]);
+    const icon = L.divIcon({
+      html:`<div style="background:${d.color};color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)">${s.emoji}</div>`,
+      iconSize:[32,32], iconAnchor:[16,16], className:''
+    });
+    L.marker([s.lat, s.lng], {icon})
+      .bindPopup(`<b>${s.emoji} ${s.name}</b><br><span style="font-size:12px">${s.desc}</span>`)
+      .addTo(m);
+  });
+  if (bounds.length > 1) m.fitBounds(bounds, {padding:[40,40]});
+  dayMaps[idx] = m;
+}
+
+// ===========================
+// TIMELINE
+// ===========================
+function buildTimeline() {
+  const tl = document.getElementById('timeline');
+  days.forEach((d, i) => {
+    const div = document.createElement('div');
+    div.className = 'tlcard';
+    div.onclick = () => showDayPage(i);
+    div.innerHTML = `
+      <div class="tldot" style="background:${d.color}">${d.emoji}</div>
+      <div class="tlbody">
+        <div class="tldate">${d.day}｜${d.date}</div>
+        <div class="tltitle">${d.title}</div>
+        <div class="tlsub">${d.sub}</div>
+        <div class="tlfoot">
+          <span class="tltag tag-stay">🏕 ${d.stay}</span>
+          ${d.note ? `<span class="tltag tag-warn">⚠️ ${d.note}</span>` : ''}
+          <button class="go-btn">詳細 →</button>
+        </div>
+      </div>`;
+    tl.appendChild(div);
+  });
+}
+
+// ===========================
+// DAY DETAIL
+// ===========================
+function buildDayDetail(idx) {
+  const d = days[idx];
+  const prev = idx > 0 ? idx - 1 : null;
+  const next = idx < days.length - 1 ? idx + 1 : null;
+  let html = `
+    <button class="back-btn" onclick="goBack()">← 日程一覧へ戻る</button>
+    <div class="day-hero" style="background:linear-gradient(135deg,${d.color}cc,${d.color})">
+      <div class="day-hero-inner">
+        <span class="day-hero-icon">${d.emoji}</span>
+        <h2>${d.day}｜${d.date}<br>${d.title}</h2>
+        <div class="day-hero-sub">${d.sub}</div>
+      </div>
+    </div>
+
+    <div class="day-map-wrap" id="dmap-${idx}"></div>
+
+    <div class="spots-title">📍 スポット候補</div>
+    <div class="spot-grid">`;
+
+  d.spots.forEach((s, si) => {
+    html += `
+      <div class="spot-card">
+        <div class="spot-emoji-wrap">${s.emoji}</div>
+        <div class="spot-info">
+          <div class="spot-name">${s.name}${s.must ? ' <span style="font-size:10px;background:#fdeaea;color:#c0392b;padding:2px 7px;border-radius:999px;font-weight:800">必見</span>' : ''}</div>
+          <div class="spot-desc">${s.desc}</div>
+          <div class="spot-meta">
+            ${s.time ? `<span class="smeta smeta-time">⏱ ${s.time}</span>` : ''}
+            ${s.cost ? `<span class="smeta smeta-cost">💴 ${s.cost}</span>` : ''}
+            ${s.tips ? `<span class="smeta smeta-tip">💡 ${s.tips}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+
+  if (d.food.length > 0) {
+    html += `<div class="spots-title" style="margin-top:4px">🍜 この日のグルメ</div><div class="food-list-day">`;
+    d.food.forEach((f, fi) => {
+      const key = `f_${idx}_${fi}`;
+      const done = ST[key] || false;
+      html += `
+        <div class="food-item-day" id="fid-${idx}-${fi}">
+          <div class="fday-emoji">${f.emoji}</div>
+          <div style="flex:1">
+            <div class="fday-name">${f.name}</div>
+            <div class="fday-shop">${f.shop}</div>
+            <div class="fday-note">${f.note}</div>
+          </div>
+          <div class="fday-check" onclick="toggleDayFood(${idx},${fi})">${done ? '✅' : '⬜'}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `
+    <div class="spots-title" style="margin-top:4px">🏕 今夜の宿</div>
+    <div class="stay-card">
+      <div class="stay-icon">🏕</div>
+      <div class="stay-info">
+        <div class="stay-name">${d.stay}</div>
+        <div class="stay-meta">${d.stayNote}</div>
+      </div>
+      <span class="stay-status ${d.stayOk ? 'stay-ok' : 'stay-warn'}">${d.stayOk ? '✅ 予約済み' : '⚠️ 要予約'}</span>
+    </div>`;
+
+  html += `<div style="display:flex;gap:10px;margin-top:8px;">`;
+  if (prev !== null) html += `<button class="save-btn" style="flex:1;margin:0" onclick="showDayPage(${prev})">← ${days[prev].day}</button>`;
+  if (next !== null) html += `<button class="save-btn" style="flex:1;margin:0;background:var(--forest)" onclick="showDayPage(${next})">${days[next].day} →</button>`;
+  html += `</div>`;
+
+  document.getElementById('day-content').innerHTML = html;
+}
+
+function toggleDayFood(di, fi) {
+  const key = `f_${di}_${fi}`;
+  ST[key] = !ST[key];
+  const el = document.getElementById(`fid-${di}-${fi}`);
+  if (el) el.querySelector('.fday-check').textContent = ST[key] ? '✅' : '⬜';
+  // also update global food list if visible
+  const gEl = document.getElementById(`gfood-${di}-${fi}`);
+  if (gEl) gEl.querySelector('.food-check').textContent = ST[key] ? '✅' : '⬜';
+  saveAll();
+}
+
+// ===========================
+// GLOBAL FOOD
+// ===========================
+function buildFood() {
+  const list = document.getElementById('food-list');
+  allFood.forEach((f) => {
+    const done = ST[f.key] || false;
+    const div = document.createElement('div');
+    div.className = 'food-card';
+    div.id = `gfood-${f.dayIdx}-${f.foodIdx}`;
+    div.style.opacity = done ? '.45' : '1';
+    div.innerHTML = `
+      <div class="food-emoji">${f.emoji}</div>
+      <div style="flex:1">
+        <div class="food-title">${f.name} <span style="font-size:11px;color:var(--muted)">｜${days[f.dayIdx].date}</span></div>
+        <div class="food-shop">${f.shop}</div>
+        <div class="food-note">${f.note}</div>
+      </div>
+      <div class="food-check" onclick="toggleGlobalFood('${f.key}',this)">${done ? '✅' : '⬜'}</div>`;
+    list.appendChild(div);
+  });
+}
+function toggleGlobalFood(key, el) {
+  ST[key] = !ST[key];
+  const card = el.closest('.food-card');
+  card.style.opacity = ST[key] ? '.45' : '1';
+  el.textContent = ST[key] ? '✅' : '⬜';
+  saveAll();
+}
+
+// ===========================
+// BOOKING
+// ===========================
+function buildBooking() {
+  const list = document.getElementById('booking-list');
+  bookings.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bitem';
+    const cls = b.status === 'ok' ? 'bok' : 'bwarn';
+    const txt = b.status === 'ok' ? '✅ 予約済み' : '⚠️ 要対応';
+    div.innerHTML = `
+      <div><div class="bname">${b.name}</div><div class="bnote">${b.date}｜${b.note}</div></div>
+      <span class="bstatus ${cls}">${txt}</span>`;
+    list.appendChild(div);
+  });
+}
+
+// ===========================
+// CHECKLIST
+// ===========================
+let checkTotal = 0;
+function buildChecklist() {
+  const wrap = document.getElementById('checklist-wrap');
+  let gi = 0;
+  checklistData.forEach(cat => {
+    const sec = document.createElement('div');
+    sec.className = 'clist-section';
+    sec.innerHTML = `<div class="clist-title">📋 ${cat.cat}</div>`;
+    cat.items.forEach(item => {
+      const key = `ck_${gi}`;
+      const done = ST[key] || false;
+      checkTotal++;
+      const el = document.createElement('div');
+      el.className = 'citem' + (done ? ' done' : '');
+      el.dataset.key = key;
+      el.innerHTML = `<div class="cbox">${done ? '✓' : ''}</div><div class="clabel">${item.label}</div><div class="cnote">${item.note}</div>`;
+      el.addEventListener('click', function() {
+        this.classList.toggle('done');
+        const isDone = this.classList.contains('done');
+        this.querySelector('.cbox').textContent = isDone ? '✓' : '';
+        ST[this.dataset.key] = isDone;
+        updateCheckProg();
+        saveAll();
+      });
+      sec.appendChild(el);
+      gi++;
+    });
+    wrap.appendChild(sec);
+  });
+  updateCheckProg();
+}
+function updateCheckProg() {
+  const items = document.querySelectorAll('#checklist-wrap .citem');
+  const done = Array.from(items).filter(el => el.classList.contains('done')).length;
+  const pct = items.length ? Math.round(done / items.length * 100) : 0;
+  document.getElementById('check-label').textContent = `${done} / ${items.length} 完了（${pct}%）`;
+  document.getElementById('check-bar').style.width = pct + '%';
+}
+
+// ===========================
+// PACKING
+// ===========================
+let packTotal = 0;
+function buildPacking() {
+  const grid = document.getElementById('pack-grid');
+  let gi = 0;
+  packingData.forEach(cat => {
+    const div = document.createElement('div');
+    div.className = 'pack-cat';
+    div.innerHTML = `<div class="pack-cat-title">${cat.cat}</div>`;
+    cat.items.forEach(item => {
+      const key = `pk_${gi}`;
+      const done = ST[key] || false;
+      packTotal++;
+      const el = document.createElement('div');
+      el.className = 'citem' + (done ? ' done' : '');
+      el.dataset.key = key;
+      el.innerHTML = `<div class="cbox">${done ? '✓' : ''}</div><div class="clabel" style="font-size:12px">${item}</div>`;
+      el.addEventListener('click', function() {
+        this.classList.toggle('done');
+        const isDone = this.classList.contains('done');
+        this.querySelector('.cbox').textContent = isDone ? '✓' : '';
+        ST[this.dataset.key] = isDone;
+        updatePackProg();
+        saveAll();
+      });
+      div.appendChild(el);
+      gi++;
+    });
+    grid.appendChild(div);
+  });
+  updatePackProg();
+}
+function updatePackProg() {
+  const items = document.querySelectorAll('#pack-grid .citem');
+  const done = Array.from(items).filter(el => el.classList.contains('done')).length;
+  const pct = items.length ? Math.round(done / items.length * 100) : 0;
+  document.getElementById('pack-label').textContent = `${done} / ${items.length} 完了（${pct}%）`;
+  document.getElementById('pack-bar').style.width = pct + '%';
+}
+
+// ===========================
+// MISSIONS
+// ===========================
+function buildMissions() {
+  const list = document.getElementById('mission-list');
+  missions.forEach((m, i) => {
+    const key = `ms_${i}`;
+    const done = ST[key] || false;
+    const div = document.createElement('div');
+    div.className = 'mission' + (done ? ' done' : '');
+    div.dataset.key = key;
+    div.innerHTML = `
+      <div class="micon">${m.emoji}</div>
+      <div><div class="mtitle">${m.title}</div><div class="mdesc">${m.desc}</div></div>
+      <div class="mcheck">${done ? '✓' : ''}</div>`;
+    div.addEventListener('click', function() {
+      this.classList.toggle('done');
+      const isDone = this.classList.contains('done');
+      this.querySelector('.mcheck').textContent = isDone ? '✓' : '';
+      ST[this.dataset.key] = isDone;
+      updateMissionProg();
+      saveAll();
+    });
+    list.appendChild(div);
+  });
+  updateMissionProg();
+}
+function updateMissionProg() {
+  const items = document.querySelectorAll('#mission-list .mission');
+  const done = Array.from(items).filter(el => el.classList.contains('done')).length;
+  const pct = items.length ? Math.round(done / items.length * 100) : 0;
+  document.getElementById('mission-label').textContent = `${done} / ${items.length} 達成（${pct}%）`;
+  document.getElementById('mission-bar').style.width = pct + '%';
+}
+
+// ===========================
+// INIT
+// ===========================
+buildTimeline();
+buildFood();
+buildBooking();
+buildChecklist();
+buildPacking();
+buildMissions();
+initMainMap();
+</script>
+</body>
+</html>
